@@ -1,12 +1,12 @@
 # go-message-bridge
 
-This project is in Alpha but works as intended. 
+*This project is in Alpha but works as intended. *
 
 Welcome to go message bridge. This is an app that allows you to connect Slack and Messages. It is a continuation of work done here in the following repos:
 
-https://github.com/drbh/MessageBridge
-https://github.com/drbh/imessage-exporter
-https://github.com/drbh/imessage-anywhere
+https://github.com/drbh/MessageBridge  
+https://github.com/drbh/imessage-exporter  
+https://github.com/drbh/imessage-anywhere  
 
 and the following article:
 
@@ -18,11 +18,15 @@ This is the most stable of all the mentioned projects and is not dependent on 3r
 - Mac OSX Sierra 10.12.6 (16G1408)
 
 ## To Do
-- [] Test on OSX +10.12
-- [] Setup data folder for db and config files
-- [] Better channel namming for contacts
-- [] Add channel clean up features (deleting)
-- [] Add better UI (not console)
+- [X] Rewrite Node to Golang
+- [X] Handle double messages
+- [X] Handle polling to be near realtime
+- [X] Use a soild storage system for handle to channel resolution
+- [ ] Test on OSX +10.12
+- [ ] Setup data folder for db and config files
+- [ ] Better channel namming for contacts
+- [ ] Add channel clean up features (deleting)
+- [ ] Add better UI (not console)
 
 
 Slack setup instructions here   
@@ -31,10 +35,26 @@ https://docs.google.com/presentation/d/1YJmuXqQlD0wbIsd4XuyL3cFhSdeHqcsRGdoUgg36
 ## To run
 
 clone the repo. 
+```
+git clone https://github.com/drbh/go-message-bridge.git
+```
 cd into the directory. 
-follow Slack Setup Instructions and  
+```
+cd go-message-bridge
+```
+follow Slack Setup Instructions and 
+```
+{
+    "user_id": "your user id",
+    "bot_token": "your bot token from slack app",
+    "user_token": "your slack legacy user token"
+}
+```
 update config.json with Slack keys.  
-run `go run main.go`
+run 
+```
+go run main.go
+```
 
 Now send someone a message in Messages and a channel should be made for that person. In order for the application to work - the Bot must be invited to the Slack channel. Do this by clicking "Invite person" in Slack. 
 
