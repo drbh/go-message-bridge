@@ -1,0 +1,5 @@
+{
+    "user_id": "your user id",
+    "bot_token": "your bot token from slack app",
+    "user_token": "your slack legacy user token"
+}
