@@ -22,6 +22,9 @@ This is the most stable of all the mentioned projects and is not dependent on 3r
 - [X] Handle double messages
 - [X] Handle polling to be near realtime
 - [X] Use a soild storage system for handle to channel resolution
+- [X] Auto add bot to chat
+- [X] Auto get the users id on startup
+- [X] Removed prefix string on Slack->Messages messages
 - [ ] Test on OSX +10.12
 - [ ] Setup data folder for db and config files
 - [ ] Better channel namming for contacts
@@ -56,6 +59,4 @@ run
 go run main.go
 ```
 
-Now send someone a message in Messages and a channel should be made for that person. In order for the application to work - the Bot must be invited to the Slack channel. Do this by clicking "Invite person" in Slack. 
-
-If you do not invite the Bot - no messages will show up!
+Now send someone a message in Messages and a channel should be made for that person.

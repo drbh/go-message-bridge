@@ -21,16 +21,19 @@ import (
 )
 
 var USER_ID string
+var BOT_ID string
+var BOT_NAME string
 var BOT_TOKEN string
 var USER_TOKEN string
 
+var lastText string
 var DATE_OFFSET int64
 var lastGUID string
 var seenMessageGuids = []string{}
 var seenMessageGuid = map[string]bool{}
 
 type configOptions struct {
-	USER_ID    string `json:"user_id"`
+	BOT_NAME   string `json:"bot_name"`
 	BOT_TOKEN  string `json:"bot_token"`
 	USER_TOKEN string `json:"user_token"`
 }
@@ -39,7 +42,7 @@ func getConfig() {
 	plan, _ := ioutil.ReadFile("config.json")
 	var data configOptions
 	json.Unmarshal([]byte(plan), &data)
-	USER_ID = data.USER_ID
+	BOT_NAME = data.BOT_NAME
 	BOT_TOKEN = data.BOT_TOKEN
 	USER_TOKEN = data.USER_TOKEN
 }
@@ -261,6 +264,14 @@ func poll() {
 				}
 				// take the channel name and handle and add to db
 				fmt.Println(channelID.ID)
+
+				// auto add the bot to the channel!
+				channelID2, errr := user_API.InviteUserToChannel(channelID.ID, BOT_ID)
+				if errr != nil {
+					fmt.Printf("%s\n", errr)
+				}
+
+				fmt.Println(channelID2)
 				fmt.Println(handle_id)
 				relative_channel = channelID.ID
 				setHandleToChannel([]byte(handle_id), []byte(channelID.ID))
@@ -273,15 +284,12 @@ func poll() {
 			// THE PLACE WE GET THE SINGLE GOOD MESSAGE
 			// de dep logic here
 			if is_from_me == "1" {
-				if len(text) > 2 {
-					fmt.Println(text[0:2])
-					if text[0:2] == "> " {
-						fmt.Println("DONT SEND MESSAGE")
+				fmt.Println(hash(text))
+				fmt.Println(hash(lastText))
+				if hash(text) == hash(lastText) {
+					fmt.Println("DONT SEND MESSAGE")
+					lastText = "reset"
 
-					} else {
-						fmt.Println("SEND MESSAGE")
-						global_rtm_2.SendMessage(global_rtm.NewOutgoingMessage(text, relative_channel))
-					}
 				} else {
 					fmt.Println("SEND MESSAGE")
 					global_rtm_2.SendMessage(global_rtm.NewOutgoingMessage(text, relative_channel))
@@ -300,7 +308,6 @@ func poll() {
 
 		if len(seenMessageGuids) > 10 {
 			key := seenMessageGuids[0]
-			// fmt.Println(key)
 			delete(seenMessageGuid, key)
 			seenMessageGuids = append(seenMessageGuids[:0], seenMessageGuids[1:]...)
 		}
@@ -336,6 +343,24 @@ func main() {
 	rtm2 := api2.NewRTM()
 	user_API = api2
 
+	users, _ := user_API.GetUsers()
+
+	// lets fetch the users id and bots id on startup
+	for i := 0; i < len(users); i++ {
+		// spew.Dump(users[i])
+		if users[i].IsPrimaryOwner && users[i].IsAdmin {
+			USER_ID = users[i].ID
+			fmt.Println("USR: ", USER_ID)
+		}
+
+		if users[i].Name == BOT_NAME && users[i].IsBot {
+			BOT_ID = users[i].ID
+			fmt.Println("BOT: ", BOT_ID)
+		}
+
+		// fmt.Println(users[i].ID, users[i].Name, users[i].IsBot, users[i].IsAdmin, users[i].IsPrimaryOwner)
+	}
+
 	global_rtm_2 = rtm2
 	go rtm2.ManageConnection()
 
@@ -357,7 +382,8 @@ func main() {
 			if ev.Type == "message" {
 				if ev.User == USER_ID {
 					fmt.Println("Should send iMessage to")
-					command := "osascript sendMessage.applescript " + handle + " \"> " + ev.Text + "\""
+					lastText = ev.Text
+					command := "osascript sendMessage.applescript " + handle + " \"" + ev.Text + "\""
 					fmt.Println(command)
 					out, _ := exec.Command("sh", "-c", command).Output()
 
