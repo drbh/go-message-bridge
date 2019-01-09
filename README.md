@@ -25,6 +25,7 @@ This is the most stable of all the mentioned projects and is not dependent on 3r
 - [X] Auto add bot to chat
 - [X] Auto get the users id on startup
 - [X] Removed prefix string on Slack->Messages messages
+- [X] Resolve channel names via Address Book!!
 - [ ] Test on OSX +10.12
 - [ ] Setup data folder for db and config files
 - [ ] Better channel namming for contacts

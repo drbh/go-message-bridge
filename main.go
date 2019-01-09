@@ -2,18 +2,19 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nlopes/slack"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"os/user"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
-
-	"encoding/json"
-	"io/ioutil"
 
 	"github.com/boltdb/bolt"
 	// "github.com/davecgh/go-spew/spew"
@@ -257,8 +258,39 @@ func poll() {
 				relative_channel = theirChannel
 			} else {
 				// make a new channel
-				userID := handle_id
-				channelID, err := user_API.CreateChannel(userID)
+				// userID := handle_id
+
+				// Make a Regex to say we only want
+				reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+				if err != nil {
+					log.Fatal(err)
+				}
+				processedString := reg.ReplaceAllString(handle, "")
+
+				command := "osascript getContact.applescript " + processedString
+				fmt.Println(command)
+				out, exr := exec.Command("sh", "-c", command).Output()
+				if exr != nil {
+					log.Fatal(exr)
+				}
+
+				names := strings.Split(string(out), `\n`)
+				fmt.Println(names, len(names))
+
+				pname := string(handle)
+
+				for i := 0; i < len(names); i++ {
+					if len(names[i]) < 1 {
+						names = names[:i+copy(names[i:], names[i+1:])]
+					}
+				}
+
+				if len(names) > 0 {
+					pname = names[0]
+				}
+				fmt.Println("Prefered Name: ", pname)
+
+				channelID, err := user_API.CreateChannel(pname)
 				if err != nil {
 					fmt.Printf("%s\n", err)
 				}
@@ -273,10 +305,14 @@ func poll() {
 
 				fmt.Println(channelID2)
 				fmt.Println(handle_id)
+
 				relative_channel = channelID.ID
+
 				setHandleToChannel([]byte(handle_id), []byte(channelID.ID))
+				// setHandleToChannel([]byte(pname), []byte(channelID.ID))
 				setHandleToChannel([]byte(channelID.ID+"-handle"), []byte(handle))
-				setHandleToChannel([]byte(channelID.ID), []byte(handle_id))
+				// setHandleToChannel([]byte(channelID.ID+"-pname"), []byte(pname))
+				// setHandleToChannel([]byte(channelID.ID), []byte(handle_id))
 			}
 
 			fmt.Println(relative_channel)
@@ -375,8 +411,8 @@ func main() {
 			fmt.Println("Connection counter:", ev.ConnectionCount)
 
 		case *slack.MessageEvent:
-			aguid := handleToChannel(ev.Channel)
-			fmt.Println(aguid)
+			// aguid := handleToChannel(ev.Channel)
+			// fmt.Println(aguid)
 			handle := handleToChannel(ev.Channel + "-handle")
 			fmt.Println(handle)
 			if ev.Type == "message" {
