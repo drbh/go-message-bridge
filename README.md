@@ -48,7 +48,7 @@ cd go-message-bridge
 follow Slack Setup Instructions and 
 ```
 {
-    "user_id": "your user id",
+    "bot_name": "your bots name",
     "bot_token": "your bot token from slack app",
     "user_token": "your slack legacy user token"
 }
