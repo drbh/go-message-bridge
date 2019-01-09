@@ -279,16 +279,12 @@ func poll() {
 
 				pname := string(handle)
 
-				for i := 0; i < len(names); i++ {
-					if len(names[i]) < 1 {
-						names = names[:i+copy(names[i:], names[i+1:])]
+				if len(names) > 0 {
+					if len(names[0]) > 4 {
+						pname = names[0]
 					}
 				}
-
-				if len(names) > 0 {
-					pname = names[0]
-				}
-				fmt.Println("Prefered Name: ", pname)
+				fmt.Println("Prefered Name: ", pname, len(pname))
 
 				channelID, err := user_API.CreateChannel(pname)
 				if err != nil {
