@@ -17,7 +17,7 @@ This is the most stable of all the mentioned projects and is not dependent on 3r
 ## Running on 
 - Mac OSX Sierra 10.12.6 (16G1408)
 
-## To Do
+## Done
 - [X] Rewrite Node to Golang
 - [X] Handle double messages
 - [X] Handle polling to be near realtime
@@ -26,11 +26,14 @@ This is the most stable of all the mentioned projects and is not dependent on 3r
 - [X] Auto get the users id on startup
 - [X] Removed prefix string on Slack->Messages messages
 - [X] Resolve channel names via Address Book!!
+
+## To Do
 - [ ] Test on OSX +10.12
 - [ ] Setup data folder for db and config files
-- [ ] Better channel namming for contacts
 - [ ] Add channel clean up features (deleting)
 - [ ] Add better UI (not console)
+- [ ] Package as binary
+- [ ] Make static site to download app
 
 
 Slack setup instructions here   
