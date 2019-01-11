@@ -1,0 +1,1 @@
+go run macapp.go -assets=dist -bin=app -icon=dist/scrum.png -name=MessageBridge -o=dend

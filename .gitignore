@@ -1,2 +1,6 @@
 my.db
 config.json
+waitCreds.go
+dend/*
+dist/app
+message-bridge/*
