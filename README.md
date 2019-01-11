@@ -26,15 +26,14 @@ This is the most stable of all the mentioned projects and is not dependent on 3r
 - [X] Auto get the users id on startup
 - [X] Removed prefix string on Slack->Messages messages
 - [X] Resolve channel names via Address Book!!
+- [X] Setup data folder for db and config files
+- [X] Add channel clean up features (deleting)
+- [X] Add better UI (not console)
+- [X] Package as binary
+- [X] Make static site to download app
 
 ## To Do
 - [ ] Test on OSX +10.12
-- [ ] Setup data folder for db and config files
-- [ ] Add channel clean up features (deleting)
-- [ ] Add better UI (not console)
-- [ ] Package as binary
-- [ ] Make static site to download app
-
 
 Slack setup instructions here   
 https://docs.google.com/presentation/d/1YJmuXqQlD0wbIsd4XuyL3cFhSdeHqcsRGdoUgg36x4U/edit?usp=sharing
