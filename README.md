@@ -4,11 +4,15 @@
 
 Welcome to go message bridge. This is an app that allows you to connect Slack and Messages. It is a continuation of work done here in the following repos:
 
+![mockup](http://talklby.com.s3-website-us-east-1.amazonaws.com/img/output.gif)
+
 https://github.com/drbh/MessageBridge  
 https://github.com/drbh/imessage-exporter  
 https://github.com/drbh/imessage-anywhere  
 
 and the following article:
+
+
 
 https://medium.com/@david.richard.holtz/blue-green-texts-and-a-simple-solution-1c1981a00430
 
@@ -48,7 +52,7 @@ cd into the directory.
 ```
 cd go-message-bridge
 ```
-follow Slack Setup Instructions and 
+put config file in ~/Documents/MessageBridgeData
 ```
 {
     "bot_name": "your bots name",
@@ -56,10 +60,13 @@ follow Slack Setup Instructions and
     "user_token": "your slack legacy user token"
 }
 ```
-update config.json with Slack keys.  
+update config.json with Slack keys (using oauth on webiste)
 run 
 ```
 go run main.go
 ```
+
+![setup](http://talklby.com.s3-website-us-east-1.amazonaws.com/img/setup.gif)
+
 
 Now send someone a message in Messages and a channel should be made for that person.
