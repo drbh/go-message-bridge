@@ -12,8 +12,8 @@ import (
 	"os/exec"
 	"os/user"
 
-	// "regexp"
 	"bytes"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -21,14 +21,31 @@ import (
 	"net/http"
 
 	"github.com/boltdb/bolt"
-	// "github.com/davecgh/go-spew/spew"
+	"github.com/davecgh/go-spew/spew"
 	"hash/fnv"
 
 	"github.com/getlantern/systray"
 	// "github.com/getlantern/systray/example/icon"
 	"github.com/skratchdot/open-golang/open"
 	"path/filepath"
+
+	"github.com/zserge/webview"
 )
+
+const (
+	windowWidth  = 960
+	windowHeight = 640
+)
+
+func handleRPC(w webview.WebView, data string) {
+	switch {
+	case data == "yes":
+		spew.Dump("yo")
+	default:
+		spew.Dump(data)
+		return
+	}
+}
 
 // Exists reports whether the named file or directory exists.
 func Exists(name string) bool {
@@ -69,9 +86,14 @@ func ConfigSet() {
 
 		doesExist := Exists("/Documents/MessageBridgeData/credentials.json")
 		if doesExist {
-			// fmt.Println("File Does Exist")
-			usr, _ := user.Current()
-			configBaseLoc = usr.HomeDir + "/Documents/MessageBridgeData/"
+			fmt.Println("File Does Exist")
+			// dir, err := os.Getwd()
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+
+			spew.Dump(os.Args)
+
 			configSet = true
 			stop <- true
 
@@ -360,8 +382,13 @@ func poll() {
 			&is_from_me,
 			&cache_roomnames,
 		)
+
 		if seenMessageGuid[guid] {
+			// fmt.Println("Seened: ", guid)
+
 		} else {
+
+			fmt.Println(guid)
 
 			logger.Println(handle_id)
 
@@ -437,9 +464,9 @@ func poll() {
 
 				} else {
 					logger.Println("SEND MESSAGE")
+
 					global_rtm_2.SendMessage(global_rtm.NewOutgoingMessage(text, relative_channel))
 				}
-
 			} else {
 				global_rtm.SendMessage(global_rtm_2.NewOutgoingMessage(text, relative_channel))
 				// convo is with handle_id
@@ -447,11 +474,12 @@ func poll() {
 
 			logger.Println(guid, handle_id, handle, is_from_me, "\t\t\t\t\t", text, len(seenMessageGuid), len(seenMessageGuids))
 
+			// fmt.Println("Add: ", guid)
 			seenMessageGuid[guid] = true
 			seenMessageGuids = append(seenMessageGuids, guid)
 		}
 
-		if len(seenMessageGuids) > 10 {
+		if len(seenMessageGuids) > 100 {
 			key := seenMessageGuids[0]
 			delete(seenMessageGuid, key)
 			seenMessageGuids = append(seenMessageGuids[:0], seenMessageGuids[1:]...)
@@ -467,14 +495,50 @@ var logger *log.Logger
 var stop chan bool
 var configSet = false
 
+func web() {
+	url := "http://talklby.com.s3-website-us-east-1.amazonaws.com"
+	w := webview.New(webview.Settings{
+		Width:                  windowWidth,
+		Height:                 windowHeight,
+		Title:                  "Message Bridge",
+		Resizable:              true,
+		URL:                    url,
+		ExternalInvokeCallback: handleRPC,
+	})
+	w.SetColor(255, 255, 255, 255)
+	defer w.Exit()
+	w.Run()
+}
+
 func onReady() {
+
+	usr, _ := user.Current()
+	configBaseLoc = usr.HomeDir + "/Documents/MessageBridgeData/"
+
+	dir, errxx := filepath.Abs(filepath.Dir(os.Args[0]))
+	if errxx != nil {
+		log.Fatal(errxx)
+	}
+
+	dir = strings.TrimSuffix(dir, "MacOS")
+
+	baseLoc = dir + "Resources/"
+
+	if baseLoc[0:4] == "/var" {
+		fmt.Println("switching to dev DB will be saved in ~/Documents/MessageBridgeData")
+		baseLoc = configBaseLoc
+	}
+
+	fmt.Println(baseLoc)
+
 	ping := func() { ConfigSet() }
 
-	stop = schedule(ping, 500*time.Millisecond)
+	stop = schedule(ping, 400*time.Millisecond)
 
 	var visable = false
 
 	mInstructions := systray.AddMenuItem("Instructions", "Instructions")
+	mWebUI := systray.AddMenuItem("Sign In", "Sign In Beta")
 	mQuit := systray.AddMenuItem("Exit", "Quit the whole app")
 
 	go func() {
@@ -482,6 +546,12 @@ func onReady() {
 			select {
 			case <-mInstructions.ClickedCh:
 				open.Run("https://github.com/drbh/go-message-bridge")
+
+			case <-mWebUI.ClickedCh:
+				fmt.Println("\nRUNWEB", baseLoc+"minimal")
+				yout, _ := exec.Command("sh", "-c", baseLoc+"minimal").Output()
+
+				fmt.Println(yout)
 
 			case <-mQuit.ClickedCh:
 				systray.Quit()
@@ -492,12 +562,13 @@ func onReady() {
 	}()
 
 	for {
-		time.Sleep(800 * time.Millisecond)
+		time.Sleep(1500 * time.Millisecond)
 		if configSet {
 			fmt.Println("Found File")
 			break
 		} else {
 			if visable == false {
+				fmt.Println(baseLoc + "minimal")
 				systray.SetTitle("Please Configure App")
 				systray.SetTooltip("Setup your credentials please")
 				visable = true
@@ -509,6 +580,7 @@ func onReady() {
 
 	// if visable {
 	mInstructions.Hide()
+	mWebUI.Hide()
 	mQuit.Hide()
 	// }
 
@@ -516,11 +588,15 @@ func onReady() {
 
 }
 
+var quit = make(chan bool)
+
+var isNotRunning = true
+
 func onReadyComplete() {
 
 	// systray.SetIcon(icon.Data)
 	systray.SetTitle("Message Bridge")
-	systray.SetTooltip("Lantern")
+	// systray.SetTooltip("Lantern")
 	// mQuitOrig := systray.AddMenuItem("Quit", "Quit the whole app")
 	// go func() {
 	// 	<-mQuitOrig.ClickedCh
@@ -532,20 +608,25 @@ func onReadyComplete() {
 	// We can manipulate the systray in other goroutines
 	go func() {
 		// systray.SetIcon(icon.Data)
-		systray.SetTitle("Message Bridge")
+		systray.SetTitle("MB")
 		systray.SetTooltip("Slack to Messages")
 		// mChange := systray.AddMenuItem("Change Me", "Change Me")
 		// mChecked := systray.AddMenuItem("Unchecked", "Check Me")
-		mEnabled := systray.AddMenuItem("Enabled", "Enabled")
+		mEnabled := systray.AddMenuItem("▶ Start", "Enabled")
 		// systray.AddMenuItem("Ignored", "Ignored")
 		mUrl := systray.AddMenuItem("Get Info", "my home")
-		mQuit := systray.AddMenuItem("Exit", "Quit the whole app")
 
 		// Sets the icon of a menu item. Only available on Mac.
 		// mQuit.SetIcon(icon.Data)
 
-		// systray.AddSeparator()
-		// mToggle := systray.AddMenuItem("Toggle", "Toggle the Quit button")
+		systray.AddSeparator()
+		systray.AddMenuItem("Slack: Channel Name", "").Disable()
+		systray.AddMenuItem("iMessage: Account Name", "").Disable()
+
+		systray.AddSeparator()
+		mSignOut := systray.AddMenuItem("Sign Out", "Sign out Slack")
+		mQuit := systray.AddMenuItem("Exit", "Quit the whole app")
+
 		// shown := true
 		for {
 			select {
@@ -560,10 +641,43 @@ func onReadyComplete() {
 			// 		mChecked.SetTitle("Checked")
 			// 	}
 			case <-mEnabled.ClickedCh:
-				mEnabled.SetTitle("Disabled")
+				fmt.Println("Was Clicked")
+				spew.Dump(mEnabled)
 
-				go runApp()
-				mEnabled.Disable()
+				if isNotRunning {
+					fmt.Println("is starting")
+
+					systray.SetTitle("MB 🏃")
+					mEnabled.SetTitle("▮▮ Stop")
+
+					go func() {
+						for {
+							select {
+							case <-quit:
+								return
+							default:
+								runApp()
+								// Do other stuff
+							}
+						}
+					}()
+					isNotRunning = false
+					// application = go runApp()
+					// mEnabled.Disable()
+				} else {
+
+					fmt.Println("is ending")
+					systray.SetTitle("MB")
+					mEnabled.SetTitle("▶ Start")
+
+					global_rtm.Disconnect()
+					global_rtm_2.Disconnect()
+					// quit <- true
+					isNotRunning = true
+
+					// mEnabled.Enable()
+				}
+
 			case <-mUrl.ClickedCh:
 				open.Run("https://github.com/drbh/go-message-bridge")
 			// case <-mToggle.ClickedCh:
@@ -576,6 +690,10 @@ func onReadyComplete() {
 			// 		mEnabled.Show()
 			// 		shown = true
 			// 	}
+			case <-mSignOut.ClickedCh:
+				systray.Quit()
+				fmt.Println("Quit2 now...")
+
 			case <-mQuit.ClickedCh:
 				systray.Quit()
 				fmt.Println("Quit2 now...")
@@ -586,7 +704,14 @@ func onReadyComplete() {
 }
 
 func main() {
+
 	onExit := func() {
+
+		// onExit2 := func() {
+		// 	fmt.Println("Finished onExit")
+		// }
+
+		// systray.Run(onReady, onExit2)
 		// fmt.Println("Starting onExit")
 		// now := time.Now()
 		// ioutil.WriteFile(fmt.Sprintf(`on_exit_%d.txt`, now.UnixNano()), []byte(now.String()), 0644)
@@ -598,25 +723,6 @@ func main() {
 }
 
 func runApp() {
-
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	dir, errxx := filepath.Abs(filepath.Dir(os.Args[0]))
-	if errxx != nil {
-		log.Fatal(errxx)
-	}
-	dir = strings.TrimSuffix(dir, "MacOS")
-	// dir = strings.TrimSuffix(dir, "MessageBridge.app/Contents/MacOS")
-	// smallDir := strings.TrimSuffix(dir, "MessageBridge.app/Contents/")
-	// logger.Println(dir)
-
-	// baseLoc = dir //+ "Resources/"
-	// configBaseLoc = smallDir
-	baseLoc = dir + "Resources/"
-
 	f, err := os.OpenFile(configBaseLoc+"text.log",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -624,14 +730,7 @@ func runApp() {
 	}
 	defer f.Close()
 
-	logger = log.New(f, "prefix", log.LstdFlags)
-
-	logger.Println(dir)
-
-	logger.Println("\n\n\n")
-	logger.Println(configBaseLoc)
-	logger.Println(baseLoc)
-	logger.Println("\n\n\n")
+	logger = log.New(f, "        ", log.LstdFlags)
 
 	getConfig()
 	runPoller()
@@ -682,7 +781,7 @@ func runApp() {
 	go rtm2.ManageConnection()
 
 	for msg := range rtm2.IncomingEvents {
-		logger.Println("-")
+		//
 		switch ev := msg.Data.(type) {
 		case *slack.HelloEvent:
 			// Ignore hello
@@ -692,22 +791,68 @@ func runApp() {
 			logger.Println("Connection counter:", ev.ConnectionCount)
 
 		case *slack.MessageEvent:
-			// aguid := handleToChannel(ev.Channel)
-			// logger.Println(aguid)
 			handle := handleToChannel(ev.Channel + "-handle")
 			logger.Println(handle)
 			if ev.Type == "message" {
-				if ev.User == USER_ID {
-					lastText = ev.Text
-					if len(handle) > 1 {
-						logger.Println("Should send iMessage to")
-						command := "osascript " + baseLoc + "sendMessage.applescript " + handle + " \"" + ev.Text + "\""
-						logger.Println(command)
-						out, _ := exec.Command("sh", "-c", command).Output()
 
-						logger.Println(out)
+				localImageURL := ""
+				if len(ev.Files) > 0 {
+					spew.Dump(msg)
+					url := ev.Files[0].URLPrivateDownload
+					localImageURL = configBaseLoc + ev.Files[0].Name
+
+					req, _ := http.NewRequest("GET", url, nil)
+					req.Header.Add("authorization", "Bearer "+USER_TOKEN)
+
+					res, _ := http.DefaultClient.Do(req)
+
+					defer res.Body.Close()
+					body, _ := ioutil.ReadAll(res.Body)
+
+					// fmt.Println(res)
+
+					// write the whole body at once
+					fmt.Println("Download image to local")
+					err = ioutil.WriteFile(localImageURL, body, 0644)
+					if err != nil {
+						panic(err)
+					}
+					// jpeg.Encode(f, body, nil)
+					// fmt.Println(string(body))
+				}
+
+				if ev.User != BOT_ID {
+					// if ev.User == USER_ID {
+
+					isUserAdd := false
+					if len(ev.Text) > 0 {
+						fmt.Println(ev.Text[0:2])
+						if ev.Text[0:2] != "<@" {
+							isUserAdd = true
+						}
 					}
 
+					if isUserAdd == false {
+						lastText = ev.Text
+						if len(handle) > 1 {
+							logger.Println("Should send iMessage to")
+							command := "osascript " + baseLoc + "sendMessage.applescript " + handle + " \"" + ev.Text + "\""
+							logger.Println(command)
+							out, _ := exec.Command("sh", "-c", command).Output()
+
+							logger.Println(out)
+						}
+						lastText = ev.Text
+
+						if len(ev.Text) == 0 {
+							logger.Println("Should send Image to")
+							command := "osascript " + baseLoc + "sendImageMessage.applescript " + handle + " \"" + localImageURL + "\""
+							logger.Println(command)
+							out, _ := exec.Command("sh", "-c", command).Output()
+
+							logger.Println(out)
+						}
+					}
 				}
 			}
 			logger.Printf("Message: %v\n", ev)
@@ -721,12 +866,41 @@ func runApp() {
 		case *slack.RTMError:
 			logger.Printf("Error: %s\n", ev.Error())
 
+		case *slack.ChannelCreatedEvent:
+			logger.Println("ADDED A NEW CHANNEL")
+			re := regexp.MustCompile("[0-9]+")
+			numbers := re.FindAllString(ev.Channel.Name, -1)
+			pnum := strings.Join(numbers[:], "")
+
+			handle := handleToChannel(pnum)
+			fmt.Println(handle)
+
+			if len(handle) < 1 {
+				// auto add the bot to the channel!
+				channelID2, errr := user_API.InviteUserToChannel(ev.Channel.ID, BOT_ID)
+				if errr != nil {
+					logger.Printf("%s\n", errr)
+				}
+
+				logger.Println(channelID2)
+
+				setHandleToChannel([]byte(pnum), []byte(ev.Channel.ID))
+				setHandleToChannel([]byte(ev.Channel.ID+"-handle"), []byte(pnum))
+			} else {
+				fmt.Println("This number already exists!")
+				fmt.Println("This number already exists!")
+			}
+
 		case *slack.InvalidAuthEvent:
 			logger.Printf("Invalid credentials")
 			return
 
 		default:
 			if msg.Type == "connecting" {
+
+			} else if msg.Type == "channel_joined" {
+				logger.Println("CHANNEL JOINED")
+				// spew.Dump(msg)
 
 			} else {
 				// Ignore other events..
