@@ -3,11 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
-	"github.com/zserge/webview"
 	"io/ioutil"
 	"log"
 	"os/user"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/zserge/webview"
 )
 
 const (
@@ -66,6 +67,7 @@ func main() {
 	// url := "https://slack.com/oauth/authorize?client_id=415460872373.416401049063&scope=bot,admin"
 	// url := "https://slack.com/oauth/authorize?client_id=415460872373.416401049063&scope=bot,admi?redirect_uri=https://u8g4rrcigf.execute-api.us-east-1.amazonaws.com/default/slack-desktop-oauthna"
 	url := "https://slack.com/oauth/authorize?client_id=415460872373.416401049063&scope=bot,admin"
+
 	// url := "http://localhost:1313/desktop-setup"
 	w := webview.New(webview.Settings{
 		Width:                  windowWidth,
@@ -74,7 +76,9 @@ func main() {
 		Resizable:              true,
 		URL:                    url,
 		ExternalInvokeCallback: handleRPC,
+		Debug:                  true,
 	})
+
 	w.SetColor(255, 255, 255, 255)
 	defer w.Exit()
 	w.Run()

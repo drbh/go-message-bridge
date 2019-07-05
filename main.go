@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/nlopes/slack"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"os/user"
+
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/nlopes/slack"
 
 	"bytes"
 	"regexp"
@@ -20,14 +21,16 @@ import (
 
 	"net/http"
 
+	"hash/fnv"
+
 	"github.com/boltdb/bolt"
 	"github.com/davecgh/go-spew/spew"
-	"hash/fnv"
 
 	"github.com/getlantern/systray"
 	// "github.com/getlantern/systray/example/icon"
-	"github.com/skratchdot/open-golang/open"
 	"path/filepath"
+
+	"github.com/skratchdot/open-golang/open"
 
 	"github.com/zserge/webview"
 )
@@ -495,20 +498,20 @@ var logger *log.Logger
 var stop chan bool
 var configSet = false
 
-func web() {
-	url := "http://talklby.com.s3-website-us-east-1.amazonaws.com"
-	w := webview.New(webview.Settings{
-		Width:                  windowWidth,
-		Height:                 windowHeight,
-		Title:                  "Message Bridge",
-		Resizable:              true,
-		URL:                    url,
-		ExternalInvokeCallback: handleRPC,
-	})
-	w.SetColor(255, 255, 255, 255)
-	defer w.Exit()
-	w.Run()
-}
+// func web() {
+// 	url := "http://talklby.com.s3-website-us-east-1.amazonaws.com"
+// 	w := webview.New(webview.Settings{
+// 		Width:                  windowWidth,
+// 		Height:                 windowHeight,
+// 		Title:                  "Message Bridge",
+// 		Resizable:              true,
+// 		URL:                    url,
+// 		ExternalInvokeCallback: handleRPC,
+// 	})
+// 	w.SetColor(255, 255, 255, 255)
+// 	defer w.Exit()
+// 	w.Run()
+// }
 
 func onReady() {
 
@@ -548,6 +551,7 @@ func onReady() {
 				open.Run("https://github.com/drbh/go-message-bridge")
 
 			case <-mWebUI.ClickedCh:
+				baseLoc = "/Users/drbh2/Desktop/go-message-bridge/dist/"
 				fmt.Println("\nRUNWEB", baseLoc+"minimal")
 				yout, _ := exec.Command("sh", "-c", baseLoc+"minimal").Output()
 
